@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Calculation Platform For Stratum Subsidence Monitoring</title>
+
+    <!-- Link Styles -->
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  
+    <!-- Third Party Styles -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Map Screenshot -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js"></script>
+
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo_details">
+          <div class="logo_name">Dashboard</div>
+          <i class="bx bx-menu" id="btn"></i>
+        </div>
+        <ul class="nav-list">
+          <li>
+            <a href="#">
+              <i class="bx bx-map"></i>
+              <span class="link_name">Yunlin</span>
+            </a>
+            <span class="tooltip">Yunlin</span>
+            <button onclick="changeTileset('a')">2019</button>
+            <button onclick="changeTileset('b')">2020</button>
+          </li>
+          <li>
+            <a href="#">
+              <i class="bx bx-map"></i>
+              <span class="link_name">Chiayi</span>
+            </a>
+            <span class="tooltip">Chiayi</span>
+            <button onclick="changeTileset('c')">2019</button>
+            <button onclick="changeTileset('d')">2020</button>
+          </li>
+          <li>
+            <a href="#">
+              <i class="bx bx-map-alt"></i>
+              <span class="link_name">Map Styles</span>
+            </a>
+            <span class="tooltip">Map Styles</span>
+            <div id="menu">
+            <input id="satellite-streets-v12" type="button" name="button" value="satellite" checked="checked">
+            <input id="light-v11" type="button" name="button" value="light">
+            <input id="dark-v11" type="button" name="button" value="dark">
+            <input id="streets-v12" type="button" name="button" value="streets">
+            <input id="outdoors-v12" type="button" name="button" value="outdoors">
+            </div>
+          </li>
+          <li>
+            <a href="#">
+              <i class="bx bx-data"></i>
+              <span class="link_name">Upload DataSet</span>
+            </a>
+            <span class="tooltip">Upload DataSet</span>
+            <main>
+              <form id="uploadForm" enctype="multipart/form-data">
+              <input type="file" name="geojsonFile" id="geojsonFile" accept=".geojson"/>
+              <input type="submit" value="Upload">
+              </form>
+              <div id="status"></div>
+              <script src="upload.js"></script>
+            </main>
+          </li>
+              <!-- print -->
+          <li>
+            <a href="#">
+              <i class="bx bx-printer"></i>
+              <span class="link_name">Print</span>
+            </a>
+            <span class="tooltip">Print</span>
+            <button id="captureButton">Print</button>
+          </li>
+              <!-- print -->
+          <li>
+            <a href="#">
+              <i class="bx bx-cog"></i>
+              <span class="link_name">Settings</span>
+            </a>
+            <span class="tooltip">Settings</span>
+          </li>
+          <li class="profile">
+            <div class="profile_details">
+              <img src="profile.jpg" alt="profile image">
+              <div class="profile_content">
+                <div class="name">Test Account</div>
+                <a href="login.php">Logout</a>
+              </div>
+            </div>
+            <i class="bx bx-log-out" id="log_out"></i>
+          </li>
+        </ul>
+      </div>
+   
+      <!-- Scripts -->
+      <script src="script.js"></script>
+
+    <!-- Header -->
+    <header class="p-3">
+        <div class="container">
+            <h3 class="text-light">Data Calculation Platform For Stratum Subsidence Monitoring</h3>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main>
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+    </main>
+
+    <!-- Third Party Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
+    
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZ3JlZ29yaXVzZ2VyYWxkaSIsImEiOiJjbGd5bDJ0NjMwODBtM2dubWswYTRrYmQzIn0.miLJ6MWSi0SWvLK1fGc1Dg';
+        const map = new mapboxgl.Map({
+          container: 'map', // container ID
+          style: 'mapbox://styles/mapbox/streets-v12', // style URL
+          center: [120.673645, 23.147736], // starting position [lng, lat]
+          zoom: 6.5, // starting zoom
+          preserveDrawingBuffer: true // Set to true to allow capturing the WebGL content
+        });
+
+        const layerList = document.getElementById('menu');
+        const inputs = layerList.getElementsByTagName('input');
+
+        for (const input of inputs) {
+          input.onclick = (layer) => {
+            const layerId = layer.target.id;
+            map.setStyle('mapbox://styles/mapbox/' + layerId);
+          };
+        }
+
+        function changeTileset(tileset) {
+      var sourceId = 'tileset';
+      var sourceUrl;
+      var sourceLayer;
+
+      if (tileset === 'a') {
+        sourceUrl = 'mapbox://gregoriusgeraldi.d51c5zsl';
+        sourceLayer = 'yunlin_2019-2020-9c6ez4';
+      } else if (tileset === 'b') {
+        sourceUrl = 'mapbox://gregoriusgeraldi.69x6blmy';
+        sourceLayer = 'yunlin_2020-2021-52i32i';
+      } else if (tileset === 'c') {
+        sourceUrl = 'mapbox://gregoriusgeraldi.1fikez0w';
+        sourceLayer = 'chiayi_2019-2020-3oqnn3';
+      }else if (tileset === 'd') {
+        sourceUrl = 'mapbox://gregoriusgeraldi.dy6bf4ki';
+        sourceLayer = 'chiayi_2020-2021-arcv9o';
+      }
+
+      if (map.getLayer('tileset-layer')) {
+        map.removeLayer('tileset-layer');
+      }
+
+      if (map.getSource(sourceId)) {
+        map.removeSource(sourceId);
+      }
+
+      map.addSource(sourceId, {
+        type: 'vector',
+        url: sourceUrl
+      });
+
+      map.addLayer({
+        id: 'tileset-layer',
+        type: 'line',
+        source: sourceId,
+        'source-layer': sourceLayer,
+        paint: {
+          'line-color': '#ff2c2c',
+          'line-width': 2
+        }
+      });
+           
+      // Add hover effect
+     map.on('mousemove', 'tileset-layer', function (e) {
+     map.getCanvas().style.cursor = 'pointer';
+
+      // Highlight the hovered feature
+      map.setFeatureState(
+      { source: 'kozuxo.clhirj0t90fgt2bludx23iacp-7ehke', id: e.features[0].id },
+      { hover: true }
+    );
+  });
+
+  // Reset hover effect when the mouse leaves the layer
+  map.on('mouseleave', 'tileset-layer', function () {
+    map.getCanvas().style.cursor = '';
+
+    // Reset the feature state
+    map.setFeatureState(
+      { source: 'kozuxo.clhirj0t90fgt2bludx23iacp-7ehke', id: null },
+      { hover: false }
+    );
+  });
+    }
+
+     // Capture screenshot
+     document.getElementById('captureButton').addEventListener('click', function() {
+    // Get the dimensions and position of the map container
+    var mapContainer = document.getElementById('map-container');
+    var rect = mapContainer.getBoundingClientRect();
+
+    // Capture the map container using html2canvas with specified dimensions
+    html2canvas(mapContainer, {
+        width: rect.width,
+        height: rect.height,
+        x: rect.left,
+        y: rect.top
+    }).then(function(canvas) {
+        // Convert canvas to an image URL
+        var imgURL = canvas.toDataURL('image/png');
+
+        // Create a link element to download the image
+        var link = document.createElement('a');
+        link.href = imgURL;
+        link.download = 'map_screenshot.png';
+        link.click();
+    });
+});
+    </script>
+</body>
+</html>
